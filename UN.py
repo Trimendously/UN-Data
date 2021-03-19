@@ -1,5 +1,7 @@
 # GUI Tool
+import tkinter
 from tkinter import*
+from tkinter import ttk
 # Makes tables and allows reading of csv files
 import pandas as pd
 from pandastable import Table
@@ -37,6 +39,27 @@ class Stats_Page:
         self.window.attributes("-fullscreen", self.fullScreenState)
     def buttons(self,csv,index):
         print('wip')
+        # Mean
+
+        #Median
+
+        #Mode
+
+        # Range
+
+        #Inner Quartile Range
+
+        #Variance
+
+        # Standard Deviation
+
+        # Display Histogram
+
+        #Display Box Plot
+
+        # Pearson Product Moment Correlation:
+
+        #...
 
 class Category_Page:
     def __init__(self,csv,index):
@@ -64,82 +87,86 @@ class Category_Page:
     def buttons(self,csv,index):
         df = pd.read_csv(csv[index], skiprows = 1)
         categories = df['Series'].unique()
-        selected_category = []
+        global selected_category
+        selected_category = ['0']*len(categories)
         i = 0
         # Creates button for every unique category
         for cat in categories:
-            selected_category.append(IntVar())
-            b = Checkbutton(self.window,text=cat,variable = selected_category[i],onvalue=1,offvalue=0, command =self.test(selected_category[i]))
-            b.grid(row=i, column=0)
+            selected_category[i] = ttk.Checkbutton(self.window,text=cat)
+            selected_category[i].grid(row=i, column=0)
             i += 1
 
         b = Button(self.window,text = "Continue")
         b.grid(row = i+1, column = 2, sticky = 'nsew')
-        b.config(command = lambda e=i+1, b = b: self.restrict(csv, e, selected_category))
+        b.config(command = lambda e=i+1, b = b: self.restrict(df, e))
 
-    def restrict(self,csv,index,selected):
+    def restrict(self,df,index):
         new = Tk()
         new.title("Restricting Data")
         new.geometry('200x150') #Sets resolution
+        new_df = []
+
+        # Restrict dataframe to previously chosen category
+        for i in range(len(selected_category)):
+            if selected_category[i].instate(['selected']):
+                temp= df['Series'] == selected_category[i]['text']
+                new_df.append(df[temp])
+        df = pd.concat(new_df)
+
 
         country_b = Button(new,text = 'Country')
         country_b.grid(row=0, column=0)
-        country_b.config(command = lambda e = 0, b = country_b: self.restrictCountry(csv, e,country_b['text']))
-
+        country_b.config(command = lambda e = 0, b = country_b: self.restrictCountry(df, e))
         year_b = Button(new,text = 'Year')
         year_b.grid(row=1, column=0)
         year_b.config(command = lambda e = 1, b = year_b: self.restrictYear(e, year_b['text']))
 
     # Restricts the dataframe to only selected countries
-    def restrictCountry(self,csv,index, selected):
+    def restrictCountry(self,df,index):
         countryPage = Tk()
         countryPage.title("County Selector")
-        df_country = pd.read_csv(csv[index])
         count = 0
         columnn= 0
-        selected_country = []
+        global selected_country
+
 
         # Kinda dumb method but can't figure out other way
-        for dat in df_country.columns:
+        for dat in df.columns:
             if count == 1:
                 column = dat
                 break
             count +=1
-        countries = df_country[column].unique()
+        countries = df[column].unique()
 
-
+        selected_country = []
         i = 0
         j = 0
+        h=0
         # Creates buttons for each country iwthin file
         for c in countries:
             var = IntVar()
-            b = Checkbutton(countryPage,text = c, variable = var)
-            selected_country.append(var)
-            b.grid(row=i, column = j)
+            selected_country.append( ttk.Checkbutton(countryPage,text = c, variable = var))
+            selected_country[i].grid(row=h, column = j)
             i+=1
-            if i == 35:
-                i = 0
+            h+=1
+            if h == 35: #Restricts rows to fit in window
+                h = 0
                 j += 1
 
         # Allows users to click continue to confirm choices
         b = Button(countryPage,text = "Continue")
         b.grid(column = j+1, sticky = 'se')
-        b.config(command = lambda e=i+1, b = b: self.countryHelper(csv,index,selected_country,countries,column))
+        b.config(command = lambda e=i+1, b = b: self.countryHelper(df,index,countries,column))
 
-    # Helper function to restrict country "wip"
-    def countryHelper(self,csv,index,selected_country,countries,column):
+    # Helper function to restrict dataframe by country
+    def countryHelper(self,df,index,countries,column):
         new_df = []
-        df = pd.read_csv(csv[index])
-        g = [i for i, e in enumerate(selected_country) if e == 1]
-
-
-        # Rewrite to use .index()
-        for i in len(selected_country):
-            if selected_country[i] == 1:
+        for i in range(len(selected_country)):
+            if selected_country[i].instate(['selected']):
                 new = df[column] == countries[i]
                 new_df.append(df[new])
 
-        new_df.concat()
+        self.df = pd.concat(new_df)
 
 
 class Main_Page:
@@ -192,10 +219,6 @@ class Main_Page:
             self.e = Entry(self.window, width=150, fg='black',font=('Arial',16,'bold'),background = color)
             self.e.grid(row=i, column= 2)
             self.e.insert(END, csv[i]) #Currently reads through all csv files on webpage can be editied to parse lesss
-        b = Button(self.window,text = "Continue",background = 'SteelBlue1')
-        b.grid(row = i+1, column = 2, sticky = 'nsew')
-        b.config(command = lambda e=i+1, b = b: self.statPage(e, b, self.selected))
-
     # Converts csv file into dataframe and displays as panda table
     def tablePage(self, text, btn):
         new = Tk()
