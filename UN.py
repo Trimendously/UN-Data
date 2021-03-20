@@ -16,8 +16,11 @@ import urllib.request
 # Tool for images
 from PIL import ImageTk, Image
 
+# File contains all stat calculations
+from statCalc import*
+
 class Stats_Page:
-    def __init__(self,csv,index):
+    def __init__(self,df):
         self.window = Tk()
         self.window.title("Statstical Methods")
         self.window.attributes('-fullscreen',False) #Makes the page take up the ful screen
@@ -30,36 +33,48 @@ class Stats_Page:
         width = self.window.winfo_screenwidth()
         height = self.window.winfo_screenheight()
         self.window.geometry(str(width)+ "x" + str(height)) #Sets resolution
-        self.buttons(csv,index)
+        self.buttons(df)
     def toggleFullScreen(self, event):
         self.fullScreenState = not self.fullScreenState
         self.window.attributes("-fullscreen", self.fullScreenState)
     def quitFullScreen(self, event):
         self.fullScreenState = False
         self.window.attributes("-fullscreen", self.fullScreenState)
-    def buttons(self,csv,index):
-        print('wip')
-        # Mean
+    def buttons(self,df):
+        stat_switch = {
+        'Mean': df_mean,
+        'Mode': df_mode,
+        'Median': df_median,
+        'Inner Quartile Range': IQR,
+        'Variance': df_variance,
+        'Standard Deviation': df_std,
+        'Pearson Product Moment Correlation': pear,
+        'Spearman Rank-Order Correlation': spear,
+        'Kendall\'s Tau-b Correlation Coefficient': kendall,
+        }
+        graph_switch = {
+        'Histogram': df_hist,
+        'Box Plot': box,
+        'Scatter Plot':scatter,
+        'Vertical Box Plots':vert,
+        'Horizon Box Plots':hor
+        }
 
-        #Median
+        operations = ["Mean","Median","Mode","Inner Quartile Range","Variance",
+        "Standard Deviation",'Pearson Product Moment Correlation',
+        'Spearman Rank-Order Correlation','Kendall\'s Tau-b Correlation Coefficient'
+        ]
+        graph_operations = ["Histogram", "Box Plot",'Scatter Plot','Vertical Box Plots','Horizon Box Plots']
 
-        #Mode
-
-        # Range
-
-        #Inner Quartile Range
-
-        #Variance
-
-        # Standard Deviation
-
-        # Display Histogram
-
-        #Display Box Plot
-
-        # Pearson Product Moment Correlation:
-
-        #...
+        for i, op in enumerate(operations):
+            calc = stat_switch.get(op)(df)
+            e =Entry(self.window, width=150, fg='black',font=('Arial',16,'bold'))
+            e.grid(row=i, column= 0,sticky='nsew')
+            e.insert(END, op +":  " +str(calc))
+        for j, graph in enumerate(graph_operations):
+            b = Button(self.window,text = graph)
+            b.grid(row = i+j, column = 0, sticky = 'nsew')
+            b.config(command = lambda e=i+j, b = b: graph_switch.get(b['text'])(df))
 
 class Category_Page:
     def __init__(self,csv,index):
@@ -76,7 +91,7 @@ class Category_Page:
         height = self.window.winfo_screenheight()
         self.window.geometry(str(width)+ "x" + str(height)) #Sets resolution
         self.buttons(csv,index)
-
+        self.window.mainloop()
     def toggleFullScreen(self, event):
         self.fullScreenState = not self.fullScreenState
         self.window.attributes("-fullscreen", self.fullScreenState)
@@ -85,7 +100,7 @@ class Category_Page:
         self.window.attributes("-fullscreen", self.fullScreenState)
 
     def buttons(self,csv,index):
-        df = pd.read_csv(csv[index], skiprows = 1)
+        df = pd.read_csv(csv[index], skiprows = 1,engine='python',encoding='unicode_escape')
         categories = df['Series'].unique()
         global selected_category
         selected_category = ['0']*len(categories)
@@ -103,7 +118,7 @@ class Category_Page:
     def restrict(self,df,index):
         new = Tk()
         new.title("Restricting Data")
-        new.geometry('200x150') #Sets resolution
+        new.geometry('600x450') #Sets resolution
         new_df = []
 
         # Restrict dataframe to previously chosen category
@@ -166,7 +181,10 @@ class Category_Page:
                 new = df[column] == countries[i]
                 new_df.append(df[new])
 
-        self.df = pd.concat(new_df)
+        self.df = pd.concat(new_df)\
+
+        stats = Stats_Page(self.df)
+
 
 
 class Main_Page:
@@ -227,7 +245,7 @@ class Main_Page:
         frame.pack(fill='both', expand=True)
 
 
-        df = (pd.read_csv(csv[int(text)]))
+        df = pd.read_csv(csv[text],engine='python',encoding='unicode_escape')
 
         pt = Table(frame,dataframe=df)
         pt.show()
@@ -259,5 +277,3 @@ def parser():
 
 csv = parser()
 app = Main_Page(csv)
-
-opened = [] #A list to keep track of opened csv files to reduce runtime "wip"
