@@ -19,6 +19,7 @@ from PIL import ImageTk, Image
 # File contains all stat calculations
 from statCalc import*
 
+#Executes statistical analysis upon the data
 class Stats_Page:
     def __init__(self,df):
         self.window = Tk()
@@ -75,13 +76,24 @@ class Stats_Page:
             b = Button(self.window,text = graph)
             b.grid(row = i+j, column = 0, sticky = 'nsew')
             b.config(command = lambda e=i+j, b = b: graph_switch.get(b['text'])(df))
+        b = Button(self.window,text = 'Display Data')
+        b.grid(row = i+j+1, column = 0, sticky = 'nsew')
+        b.config(command = lambda: self.displayData(df))
 
+    #Display table full of data
+    def displayData(self,df):
+        new = Tk()
+        new.title("Data")
+        frame = Frame(new)
+        frame.pack(fill='both', expand=True)
+
+        pt = Table(frame,dataframe=df)
+        pt.show()
 class Category_Page:
     def __init__(self,csv,index):
         self.window = Tk()
         self.window.title("UN Data (Categories)")
         self.window.attributes('-fullscreen',False) #Makes the page take up the ful screen
-
         #Allows user toggle full screen if desired
         self.window.bind("<F11>", self.toggleFullScreen)
         self.window.bind("<Escape>", self.quitFullScreen)
@@ -113,9 +125,9 @@ class Category_Page:
 
         b = Button(self.window,text = "Continue")
         b.grid(row = i+1, column = 2, sticky = 'nsew')
-        b.config(command = lambda e=i+1, b = b: self.restrict(df, e))
+        b.config(command = lambda: self.restrict(df))
 
-    def restrict(self,df,index):
+    def restrict(self,df):
         new = Tk()
         new.title("Restricting Data")
         new.geometry('600x450') #Sets resolution
@@ -126,20 +138,59 @@ class Category_Page:
             if selected_category[i].instate(['selected']):
                 temp= df['Series'] == selected_category[i]['text']
                 new_df.append(df[temp])
-        df = pd.concat(new_df)
+        self.df = pd.concat(new_df)
 
 
         country_b = Button(new,text = 'Country')
         country_b.grid(row=0, column=0)
-        country_b.config(command = lambda e = 0, b = country_b: self.restrictCountry(df, e))
+        country_b.config(command = lambda : self.restrictCountry(self.df))
         year_b = Button(new,text = 'Year')
         year_b.grid(row=1, column=0)
-        year_b.config(command = lambda e = 1, b = year_b: self.restrictYear(e, year_b['text']))
+        year_b.config(command = lambda : self.restrictYear(self.df))
+        b = Button(new,text = 'Continue')
+        #b.config(command = Stats_Page(self.df))
+        b.config(command = lambda: Stats_Page(self.df))
+        b.grid(row=2, column=0)
+
+    # Restricts the dataframe to only selected years
+    def restrictYear(self,df):
+        self.yearPage = Tk()
+        self.yearPage.title("Year Selector")
+        columnn= 0
+        global selected_year
+        selected_year = []
+
+        years = df['Year'].unique()
+        j = 0
+        h = 0
+        for i, y in enumerate(years):
+            var = IntVar()
+            selected_year.append(ttk.Checkbutton(self.yearPage,text = y, variable = var))
+            selected_year[i].grid(row=h, column = j)
+            h+=1
+            if h == 35: #Restricts rows to fit in window
+                h = 0
+                j += 1
+
+        # Allows users to click continue to confirm choices
+        b = Button(self.yearPage,text = "Confirm")
+        b.grid(column = j+1, sticky = 'se')
+        b.config(command = lambda : self.yearHelper(df,years))
+
+    def yearHelper(self,df,years):
+        new_df = []
+        for i in range(len(selected_year)):
+            if selected_year[i].instate(['selected']):
+                new = df['Year'] == years[i]
+                new_df.append(df[new])
+
+        self.df = pd.concat(new_df)
+        self.yearPage.destroy
 
     # Restricts the dataframe to only selected countries
-    def restrictCountry(self,df,index):
+    def restrictCountry(self,df):
         countryPage = Tk()
-        countryPage.title("County Selector")
+        countryPage.title("Country Selector")
         count = 0
         columnn= 0
         global selected_country
@@ -156,11 +207,11 @@ class Category_Page:
         selected_country = []
         i = 0
         j = 0
-        h=0
+        h =0
         # Creates buttons for each country iwthin file
         for c in countries:
             var = IntVar()
-            selected_country.append( ttk.Checkbutton(countryPage,text = c, variable = var))
+            selected_country.append(ttk.Checkbutton(countryPage,text = c, variable = var))
             selected_country[i].grid(row=h, column = j)
             i+=1
             h+=1
@@ -171,27 +222,24 @@ class Category_Page:
         # Allows users to click continue to confirm choices
         b = Button(countryPage,text = "Continue")
         b.grid(column = j+1, sticky = 'se')
-        b.config(command = lambda e=i+1, b = b: self.countryHelper(df,index,countries,column))
+        b.config(command = lambda: self.countryHelper(df,countryPage,countries,column))
 
     # Helper function to restrict dataframe by country
-    def countryHelper(self,df,index,countries,column):
+    def countryHelper(self,df,countryPage,countries,column):
         new_df = []
         for i in range(len(selected_country)):
             if selected_country[i].instate(['selected']):
                 new = df[column] == countries[i]
                 new_df.append(df[new])
 
-        self.df = pd.concat(new_df)\
-
-        stats = Stats_Page(self.df)
-
-
+        self.df = pd.concat(new_df)
+        countryPage.destroy
 
 class Main_Page:
     def __init__(self,csv):
         self.window = Tk()
         self.window.title("UN Data")
-        self.window.attributes('-fullscreen',False) #Makes the page take up the ful screen
+        self.window.attributes('-fullscreen',False) #Makes the page take up the full screen
 
         #Allows user toggle full screen if desired
         self.window.bind("<F11>", self.toggleFullScreen)
@@ -237,6 +285,7 @@ class Main_Page:
             self.e = Entry(self.window, width=150, fg='black',font=('Arial',16,'bold'),background = color)
             self.e.grid(row=i, column= 2)
             self.e.insert(END, csv[i]) #Currently reads through all csv files on webpage can be editied to parse lesss
+
     # Converts csv file into dataframe and displays as panda table
     def tablePage(self, text, btn):
         new = Tk()
