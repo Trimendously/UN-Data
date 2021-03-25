@@ -2,6 +2,7 @@
 import tkinter
 from tkinter import*
 from tkinter import ttk
+
 # Makes tables and allows reading of csv files
 import pandas as pd
 from pandastable import Table
@@ -30,10 +31,6 @@ class Stats_Page:
         self.window.bind("<F11>", self.toggleFullScreen)
         self.window.bind("<Escape>", self.quitFullScreen)
 
-        #Sets the default resolution of the main page
-        width = self.window.winfo_screenwidth()
-        height = self.window.winfo_screenheight()
-        self.window.geometry(str(width)+ "x" + str(height)) #Sets resolution
         self.buttons(df)
     def toggleFullScreen(self, event):
         self.fullScreenState = not self.fullScreenState
@@ -60,24 +57,23 @@ class Stats_Page:
         'Vertical Box Plots':vert,
         'Horizon Box Plots':hor
         }
-
         operations = ["Mean","Median","Mode","Inner Quartile Range","Variance",
         "Standard Deviation",'Pearson Product Moment Correlation',
-        'Spearman Rank-Order Correlation','Kendall\'s Tau-b Correlation Coefficient'
-        ]
+        'Spearman Rank-Order Correlation','Kendall\'s Tau-b Correlation Coefficient']
         graph_operations = ["Histogram", "Box Plot",'Scatter Plot','Vertical Box Plots','Horizon Box Plots']
 
         for i, op in enumerate(operations):
             calc = stat_switch.get(op)(df)
-            e =Entry(self.window, width=150, fg='black',font=('Arial',16,'bold'))
-            e.grid(row=i, column= 0,sticky='nsew')
+            e =Entry(self.window, width=150, fg='black',font=('Arial',20,'bold'),background = theme(i))
+            e.grid(row=i, column= 0)
             e.insert(END, op +":  " +str(calc))
-        for j, graph in enumerate(graph_operations):
-            b = Button(self.window,text = graph)
-            b.grid(row = i+j, column = 0, sticky = 'nsew')
+        for j, graph in enumerate(graph_operations,start=1):
+            b = Button(self.window,text = graph,background=theme(i+j),font = ('Arial',15,'bold'))
+            b.grid(row = i+j, column = 0)
             b.config(command = lambda e=i+j, b = b: graph_switch.get(b['text'])(df))
-        b = Button(self.window,text = 'Display Data')
-        b.grid(row = i+j+1, column = 0, sticky = 'nsew')
+
+        b = Button(self.window,text = 'Display Data',background = theme(i+j+1),font = ('Arial',15,'bold'))
+        b.grid(row = i+j+1, column = 0)
         b.config(command = lambda: self.displayData(df))
 
     #Display table full of data
@@ -89,6 +85,7 @@ class Stats_Page:
 
         pt = Table(frame,dataframe=df)
         pt.show()
+
 class Category_Page:
     def __init__(self,csv,index):
         self.window = Tk()
@@ -114,17 +111,26 @@ class Category_Page:
     def buttons(self,csv,index):
         df = pd.read_csv(csv[index], skiprows = 1,engine='python',encoding='unicode_escape')
         categories = df['Series'].unique()
+        # Populates list to store selected categories
         global selected_category
         selected_category = ['0']*len(categories)
-        i = 0
-        # Creates button for every unique category
-        for cat in categories:
-            selected_category[i] = ttk.Checkbutton(self.window,text=cat)
-            selected_category[i].grid(row=i, column=0)
-            i += 1
 
-        b = Button(self.window,text = "Continue")
-        b.grid(row = i+1, column = 2, sticky = 'nsew')
+        # Centers column
+        self.window.grid_columnconfigure((0), weight=1)
+
+        # Sets the font size
+        B_Style = ttk.Style(self.window)
+        B_Style.configure("b.TCheckbutton",font=('',30))
+        prompt_b = Label(self.window,text = "Please select the data categories that you desire:",font = 30)
+        prompt_b.grid(row = 0, column = 0)
+
+        # Creates button for every unique category
+        for i,cat in enumerate(categories):
+            selected_category[i] = ttk.Checkbutton(self.window,text=cat,style = "b.TCheckbutton")
+            selected_category[i].grid(row=i+1, column=0)
+
+        b = Button(self.window,text = "Continue", font = 30)
+        b.grid(row = i+2, column = 0)
         b.config(command = lambda: self.restrict(df))
 
     def restrict(self,df):
@@ -140,52 +146,57 @@ class Category_Page:
                 new_df.append(df[temp])
         self.df = pd.concat(new_df)
 
+        # Centers the buttons
+        new.grid_columnconfigure((0), weight=1)
 
-        country_b = Button(new,text = 'Country')
+        country_b = Button(new,text = 'Country', font = 50)
         country_b.grid(row=0, column=0)
         country_b.config(command = lambda : self.restrictCountry(self.df))
-        year_b = Button(new,text = 'Year')
+
+        year_b = Button(new,text = 'Year', font = 50)
         year_b.grid(row=1, column=0)
         year_b.config(command = lambda : self.restrictYear(self.df))
-        b = Button(new,text = 'Continue')
-        #b.config(command = Stats_Page(self.df))
+
+        b = Button(new,text = 'Continue',font = 50)
         b.config(command = lambda: Stats_Page(self.df))
         b.grid(row=2, column=0)
 
     # Restricts the dataframe to only selected years
     def restrictYear(self,df):
-        self.yearPage = Tk()
-        self.yearPage.title("Year Selector")
-        columnn= 0
+        yearPage = Tk()
+        yearPage.title("Year Selector")
+
+        # List to store all selected years
         global selected_year
         selected_year = []
 
         years = df['Year'].unique()
-        j = 0
-        h = 0
+
+        columns = 0
+        rows = 0
         for i, y in enumerate(years):
             var = IntVar()
-            selected_year.append(ttk.Checkbutton(self.yearPage,text = y, variable = var))
-            selected_year[i].grid(row=h, column = j)
-            h+=1
-            if h == 35: #Restricts rows to fit in window
-                h = 0
-                j += 1
+            selected_year.append(ttk.Checkbutton(yearPage,text = y, variable = var))
+            selected_year[i].grid(row=rows, column = columns)
+            rows+=1
+            if rows == 35: #Restricts rows to fit in window
+                rows = 0
+                columns += 1
 
         # Allows users to click continue to confirm choices
-        b = Button(self.yearPage,text = "Confirm")
-        b.grid(column = j+1, sticky = 'se')
-        b.config(command = lambda : self.yearHelper(df,years))
+        b = Button(yearPage,text = "Confirm")
+        b.grid(column = columns+1)
+        b.config(command = lambda : self.yearHelper(df,years,yearPage))
 
-    def yearHelper(self,df,years):
+    def yearHelper(self,df,years,yearPage):
         new_df = []
-        for i in range(len(selected_year)):
+        for i,select in enumerate(selected_year):
             if selected_year[i].instate(['selected']):
                 new = df['Year'] == years[i]
                 new_df.append(df[new])
 
         self.df = pd.concat(new_df)
-        self.yearPage.destroy
+        yearPage.destroy()
 
     # Restricts the dataframe to only selected countries
     def restrictCountry(self,df):
@@ -195,8 +206,7 @@ class Category_Page:
         columnn= 0
         global selected_country
 
-
-        # Kinda dumb method but can't figure out other way
+        # Poor implementation
         for dat in df.columns:
             if count == 1:
                 column = dat
@@ -205,35 +215,34 @@ class Category_Page:
         countries = df[column].unique()
 
         selected_country = []
-        i = 0
-        j = 0
-        h =0
-        # Creates buttons for each country iwthin file
-        for c in countries:
+
+        columns = 0
+        rows = 0
+        # Creates buttons for each country within file
+        for i,c in enumerate(countries):
             var = IntVar()
             selected_country.append(ttk.Checkbutton(countryPage,text = c, variable = var))
-            selected_country[i].grid(row=h, column = j)
-            i+=1
-            h+=1
-            if h == 35: #Restricts rows to fit in window
-                h = 0
-                j += 1
+            selected_country[i].grid(row=rows, column = columns)
+            rows+=1
+            if rows == 35: #Restricts rows to fit in window
+                rows = 0
+                columns += 1
 
         # Allows users to click continue to confirm choices
-        b = Button(countryPage,text = "Continue")
-        b.grid(column = j+1, sticky = 'se')
+        b = Button(countryPage,text = "Confirm")
+        b.grid(column = columns+1)
         b.config(command = lambda: self.countryHelper(df,countryPage,countries,column))
 
     # Helper function to restrict dataframe by country
     def countryHelper(self,df,countryPage,countries,column):
         new_df = []
-        for i in range(len(selected_country)):
+        for i, country in enumerate(selected_country):
             if selected_country[i].instate(['selected']):
                 new = df[column] == countries[i]
                 new_df.append(df[new])
 
         self.df = pd.concat(new_df)
-        countryPage.destroy
+        countryPage.destroy()
 
 class Main_Page:
     def __init__(self,csv):
@@ -268,10 +277,7 @@ class Main_Page:
         self.selected = []
         for i in range(len(csv)):
             # Creates a color theme
-            if i % 2 == 0:
-                color = 'LightSteelBlue1'
-            else:
-                color = 'white'
+            color = theme(i)
             # Selecting tables to operate on
             b = Button(self.window,text="Select Table",background=color)
             b.grid(row=i, column=0)
@@ -292,7 +298,6 @@ class Main_Page:
         new.title("Data")
         frame = Frame(new)
         frame.pack(fill='both', expand=True)
-
 
         df = pd.read_csv(csv[text],engine='python',encoding='unicode_escape')
 
@@ -323,6 +328,12 @@ def parser():
         csv.append(temp.replace(" ", "%20"))
     return csv
 
+# Sets color theme
+def theme(index):
+    if index % 2 == 0:
+        return 'LightSteelBlue1'
+    else:
+        return 'white'
 
 csv = parser()
 app = Main_Page(csv)
