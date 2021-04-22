@@ -6,12 +6,10 @@ Python 3.90 ( Need python 3 or above)
 To run make sure Pandas, BeautifulSoup, tkinter, and numpy are up to date.
 
 Windows: 
-        pip install pandas
-        pip install BeautifulSoup
-        pip install tkinter
-        pip install numpy
+.
+        pip install -r requirements.txt
 
-Then run on windows command line/ terminal python un.py
+Then run on windows command line/ terminal using python un.py
 or
 simply click on the python executable.
 
