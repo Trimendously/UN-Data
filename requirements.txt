@@ -1,0 +1,4 @@
+beautifulSoup4
+tkinter
+numpy
+pandas
