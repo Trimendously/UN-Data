@@ -6,7 +6,7 @@ from tkinter import ttk
 # Makes tables and allows reading of csv files
 import pandas as pd
 from pandastable import Table
-
+import numpy as np
 # Will fetch the html files
 import requests
 
@@ -14,8 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 import urllib.request
 
-# Tool for images
-from PIL import ImageTk, Image
+
 
 # File contains all stat calculations
 from statCalc import*
@@ -24,7 +23,7 @@ from statCalc import*
 class Stats_Page:
     def __init__(self,df):
         self.window = Tk()
-        self.window.title("Statstical Methods")
+        self.window.title("Statistical Methods")
         self.window.attributes('-fullscreen',False) #Makes the page take up the ful screen
 
         #Allows user toggle full screen if desired
@@ -46,13 +45,13 @@ class Stats_Page:
         'Inner Quartile Range': IQR,
         'Variance': df_variance,
         'Standard Deviation': df_std,
-        'Pearson Product Moment Correlation': pear,
+        'Pearson Product Moment Correlation': pear, #These are different with decimal restriction
         'Spearman Rank-Order Correlation': spear,
         'Kendall\'s Tau-b Correlation Coefficient': kendall,
         }
         graph_switch = {
         'Histogram': df_hist,
-        'Box Plot': box,
+        'Box Plot': box, #Restrict by year if multiple years given give muktiple boxplots
         'Scatter Plot':scatter,
         'Vertical Box Plots':vert,
         'Horizon Box Plots':hor
@@ -66,7 +65,10 @@ class Stats_Page:
             calc = stat_switch.get(op)(df)
             e =Entry(self.window, width=150, fg='black',font=('Arial',20,'bold'),background = theme(i))
             e.grid(row=i, column= 0)
-            e.insert(END, op +":  " +str(calc))
+
+            formatted = np.round(calc,decimals = 3)
+
+            e.insert(END, op +":  " +str(formatted))
         for j, graph in enumerate(graph_operations,start=1):
             b = Button(self.window,text = graph,background=theme(i+j),font = ('Arial',15,'bold'))
             b.grid(row = i+j, column = 0)
@@ -259,9 +261,7 @@ class Main_Page:
         height = self.window.winfo_screenheight()
         self.window.geometry(str(width)+ "x" + str(height)) #Sets resolution
 
-        # Adds the UN symbol
-        symbol = PhotoImage(file = "UN_symbol.png")
-        self.window.iconphoto(False, symbol)
+
         #Sets up the buttons
         self.buttons(csv)
         self.window.mainloop()
