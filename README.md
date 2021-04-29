@@ -1,13 +1,11 @@
 # UN-Data
 
 Created in Windows 10
-Python 3.90 ( Need python 3 or above)
+Python 3.90 (Need python 3 or above)
 
-To run make sure Pandas, BeautifulSoup, tkinter, and numpy are up to date.
 
 Windows: 
-.
-        pip install -r requirements.txt
+Just make sure python3 is installed correctly.
 
 Then run on windows command line/ terminal using python un.py
 or
