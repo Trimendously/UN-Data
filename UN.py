@@ -16,10 +16,13 @@ import requests
 from bs4 import BeautifulSoup
 import urllib.request
 
-
-
 # File contains all stat calculations
 from statCalc import*
+
+import sys
+import subprocess
+# implement pip as a subprocess:
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
 
 #Executes statistical analysis upon the data
 class Stats_Page:
@@ -97,7 +100,7 @@ class Stats_Page:
     #saves dataframe as excel file
     def saveDataframe(self):
         file_name = simpledialog.askstring("Input", " What do you want the file name to be?",
-        parent=save_window)
+        parent=self.window)
 
         file_name = file_name + '.xlsx'
         writers = pd.ExcelWriter(file_name)
