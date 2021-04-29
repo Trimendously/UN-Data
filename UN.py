@@ -1,11 +1,13 @@
 # GUI Tool
-import tkinter
+import tkinter as tk
 from tkinter import*
 from tkinter import ttk
+from tkinter import simpledialog
 
 # Makes tables and allows reading of csv files
 import pandas as pd
-from pandastable import Table
+import pandastable as pt
+
 import numpy as np
 # Will fetch the html files
 import requests
@@ -29,15 +31,15 @@ class Stats_Page:
         #Allows user toggle full screen if desired
         self.window.bind("<F11>", self.toggleFullScreen)
         self.window.bind("<Escape>", self.quitFullScreen)
-
-        self.buttons(df)
+        self.df = df
+        self.buttons()
     def toggleFullScreen(self, event):
         self.fullScreenState = not self.fullScreenState
         self.window.attributes("-fullscreen", self.fullScreenState)
     def quitFullScreen(self, event):
         self.fullScreenState = False
         self.window.attributes("-fullscreen", self.fullScreenState)
-    def buttons(self,df):
+    def buttons(self):
         stat_switch = {
         'Mean': df_mean,
         'Mode': df_mode,
@@ -62,7 +64,7 @@ class Stats_Page:
         graph_operations = ["Histogram", "Box Plot",'Scatter Plot','Vertical Box Plots','Horizon Box Plots']
 
         for i, op in enumerate(operations):
-            calc = stat_switch.get(op)(df)
+            calc = stat_switch.get(op)(self.df)
             e =Entry(self.window, width=150, fg='black',font=('Arial',20,'bold'),background = theme(i))
             e.grid(row=i, column= 0)
 
@@ -72,21 +74,35 @@ class Stats_Page:
         for j, graph in enumerate(graph_operations,start=1):
             b = Button(self.window,text = graph,background=theme(i+j),font = ('Arial',15,'bold'))
             b.grid(row = i+j, column = 0)
-            b.config(command = lambda e=i+j, b = b: graph_switch.get(b['text'])(df))
+            b.config(command = lambda e=i+j, b = b: graph_switch.get(b['text'])(self.df))
 
         b = Button(self.window,text = 'Display Data',background = theme(i+j+1),font = ('Arial',15,'bold'))
         b.grid(row = i+j+1, column = 0)
-        b.config(command = lambda: self.displayData(df))
+        b.config(command = lambda: self.displayData())
+
+        b = Button(self.window,text = 'Save as Excel File',background = theme(i+j+2),font = ('Arial',15,'bold'))
+        b.grid(row = i+j+2, column = 0)
+        b.config(command = lambda: self.saveDataframe())
 
     #Display table full of data
-    def displayData(self,df):
+    def displayData(self):
         new = Tk()
         new.title("Data")
         frame = Frame(new)
         frame.pack(fill='both', expand=True)
 
-        pt = Table(frame,dataframe=df)
-        pt.show()
+        table = pt.Table(frame,dataframe=self.df)
+        table.show()
+
+    #saves dataframe as excel file
+    def saveDataframe(self):
+        file_name = simpledialog.askstring("Input", " What do you want the file name to be?",
+        parent=save_window)
+
+        file_name = file_name + '.xlsx'
+        writers = pd.ExcelWriter(file_name)
+        self.df.to_excel(writers)
+        writers.save()
 
 class Category_Page:
     def __init__(self,csv,index):
@@ -301,8 +317,8 @@ class Main_Page:
 
         df = pd.read_csv(csv[text],engine='python',encoding='unicode_escape')
 
-        pt = Table(frame,dataframe=df)
-        pt.show()
+        table = pt.Table(frame,dataframe=df)
+        table.show()
 
     def statPage(self,index,btn):
         stats = Category_Page(csv,index)
