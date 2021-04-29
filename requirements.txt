@@ -4,3 +4,4 @@ numpy==1.19.5
 matplotlib==3.3.4
 requests==2.25.1
 beautifulsoup4==4.9.3
+openpyxl==3.0.7
